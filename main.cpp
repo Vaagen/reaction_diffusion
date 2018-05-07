@@ -24,12 +24,27 @@ double printMessageTime(std::string message, double start_time, double last_time
 }
 
 void get_euler_explicit_matrix(double alpha, int N_grid, arma::SpMat<double>& B){
-  B.eye(N_grid,N_grid);
+  B.speye(N_grid,N_grid);
   B*= 1-2*alpha;
   B(0,0)=B(N_grid-1,N_grid-1)=1;
   for(int i=N_grid-2; i>0; i--){
     B(i,i+1)=B(i,i-1)=alpha;
   }
+}
+
+void plot_vector(arma::Col<double> arma_vec, int N_grid){
+  std::vector<double> vec_x(N_grid), vec_y(N_grid);
+  for( int i=0; i<N_grid; i++){
+    vec_x.at(i)=i;
+    vec_y.at(i)=arma_vec(i);
+  }
+  plt::plot(vec_x,vec_y);
+  plt::draw();
+  // plt::show();
+  plt::pause(0.001);
+  // std::cout << "Press enter to continue." << std::endl;
+  // getchar();
+
 }
 
 int main(int argc, char *argv[]){
@@ -38,35 +53,55 @@ int main(int argc, char *argv[]){
   double last_time=start_time;
 
   // Setup of parameters
-  double Da0 =1;
-  double Db0 =1;
-  double Dc0 =1;
-  double R   =1;
-  double L   =1;
+  double Da0 =4e-7;
+  double Db0 =2.0/3.0*Da0;
+  double Dc0 =8.0/15.0*Da0;
+  double R   =1.0;
+  double L   =1.0;
+  int T = 1000000;
 
-  double CLF =1;
+  // Decide CFL for a, then decide delta_t from this, letting CFL for b and c be smaller.
+  double CFL_a = 0.49;
+  // Boundary conditions
+  double a0  = 1.0;
+  double b0  = a0*10.0;
+  // Nucleation threshold
+  double c0 = 0.03;
 
-  double a0  =1;
+  int N_grid = 1000 + 2;
+  double delta_x = L/(N_grid-1);
+  double delta_t = pow(delta_x,2)*CFL_a/Da0;
 
-  int N_grid = 10 + 2;
+  double CFL_b = Db0*delta_t/pow(delta_x,2);
+  double CFL_c = Dc0*delta_t/pow(delta_x,2);
 
   // Setup boundary conditions, aka initial vectors.
   arma::Col<double> a(N_grid);
   a.fill(0);
-  a(0)=1;
-  a(N_grid-1)=2;
+  a(0)=a0/a0;
 
-  std::cout << a << '\n';
+  arma::Col<double> b(N_grid);
+  b.fill(0);
+  b(N_grid-1)=b0/a0;
 
   // Explicit euler
   // Set up matrices
-  double alpha=0.25;
-  arma::SpMat<double> B;
-  get_euler_explicit_matrix(alpha, N_grid, B);
-
+  arma::SpMat<double> B_a;
+  get_euler_explicit_matrix(CFL_a, N_grid, B_a);
+  arma::SpMat<double> B_b;
+  get_euler_explicit_matrix(CFL_b, N_grid, B_b);
 
   // Plot
-
+  plot_vector(a,N_grid);
+  for(int t=0; t<T; t++){
+    a = B_a*a;
+    b = B_b*b;
+    if(t%10000==0){
+      plot_vector(a,N_grid);
+      plot_vector(b,N_grid);
+    }
+  }
+  plot_vector(a,N_grid);
 
   last_time= printMessageTime("Reached end of main.", start_time,last_time);
   return 0;
