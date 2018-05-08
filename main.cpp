@@ -41,7 +41,7 @@ void step_func(arma::Col<double>& c, double c0, arma::Col<double>& above_critica
 void plot_vector(arma::Col<double> arma_vec, int N_grid){
   std::vector<double> vec_x(N_grid), vec_y(N_grid);
   for( int i=0; i<N_grid; i++){
-    vec_x.at(i)=i;
+    vec_x.at(i)=i*1.0/N_grid;
     vec_y.at(i)=arma_vec(i);
   }
   plt::plot(vec_x,vec_y);
@@ -73,9 +73,10 @@ int main(int argc, char *argv[]){
   double N2  =R/10.0;
   // Simulation time
   int T = 1000000;
-
+  // Framerate in how many timesteps between each frame
+  int framerate = 10000;
   // Decide CFL for a, then decide delta_t from this, letting CFL for b and c be smaller.
-  // CFL 0.08 highest possible for explicit scheme for b0=10*a0
+  // CFL 0.08 highest possible for explicit scheme with b0=10*a0
   double CFL_a = 0.08;
   // Boundary conditions
   double a0  = 1.0;
@@ -91,6 +92,41 @@ int main(int argc, char *argv[]){
   // To have same time step b and c must have seperate CFL numbers, we vary CFL_a since it's largest
   double CFL_b = Db0*delta_t/pow(delta_x,2);
   double CFL_c = Dc0*delta_t/pow(delta_x,2);
+
+  // Inform user of parameters
+  std::cout << "Delta t: " << delta_t << '\n';
+  std::cout << "# of points: " << N_grid << '\n';
+  std::cout << "CFL a: " << CFL_a << '\n';
+  std::cout << "CFL b: " << CFL_b << '\n';
+  std::cout << "CFL c: " << CFL_c << '\n';
+
+  // Output identifier and path, NB: make folder manually
+  std::string PATH="output/test/";
+  std::cout << "Output files will be saved to " << PATH << '\n';
+  // Save parameters
+  std::ofstream paramFile;
+  std::string filename = PATH + "parameters.txt";
+  paramFile.open (filename);
+  paramFile << "Delta_t" << '\t' << delta_t << '\n';
+  paramFile << "L" << '\t' << L << '\n';
+  paramFile << "Delta_x" << '\t' << delta_x << '\n';
+  paramFile << "N_grid" << '\t' << N_grid << '\n';
+  paramFile << "f_rate" << '\t' << framerate << '\n';
+  paramFile << "a0" << '\t' << a0 << '\n';
+  paramFile << "b0" << '\t' << b0 << '\n';
+  paramFile << "c0" << '\t' << c0 << '\n';
+  paramFile << "s0" << '\t' << "nan" << '\n';
+  paramFile << "Da0" << '\t' << Da0 << '\n';
+  paramFile << "Db0" << '\t' << Db0 << '\n';
+  paramFile << "Dc0" << '\t' << Dc0 << '\n';
+  paramFile << "R" << '\t' << R << '\n';
+  paramFile << "N1" << '\t' << N1 << '\n';
+  paramFile << "N2" << '\t' << N2 << '\n';
+  paramFile << "CFL_a" << '\t' << CFL_a << '\n';
+  paramFile << "CFL_b" << '\t' << CFL_b << '\n';
+  paramFile << "CFL_c" << '\t' << CFL_c << '\n';
+  paramFile.close();
+  std::cout << "All parameters saved to " << filename <<'\n';
 
   // Setup initial vectors.
   arma::Col<double> a(N_grid);
@@ -116,8 +152,7 @@ int main(int argc, char *argv[]){
   arma::Col<double> reaction_cs(N_grid);
   reaction_cs.fill(0);
 
-
-  // Explicit euler
+  // Explicit Euler for diffusion terms
   // Set up matrices
   arma::SpMat<double> B_a;
   get_euler_explicit_matrix(CFL_a, N_grid, B_a);
@@ -126,38 +161,40 @@ int main(int argc, char *argv[]){
   arma::SpMat<double> B_c;
   get_euler_explicit_matrix(CFL_c, N_grid, B_c);
 
-  std::cout << delta_t << '\n';
-
-  // Propagate time and plot.
+  // Propagate time
   for(int t=0; t<T_steps; t++){
-    // a + b -> c
+    // a + b -> c, NOTE: % is element wise multiplication in Armadillo
     reaction_ab = delta_t*R*(a%b);
     // Nucleation
     step_func(c, c0, above_critical_c);
     reaction_cc = delta_t*N1*(above_critical_c % (c%c));
     // Deposition on existing solids
     reaction_cs = delta_t*N2*(c%s);
-
     // Add reaction terms
     a = a - reaction_ab;
     b = b - reaction_ab;
     c = c + reaction_ab - reaction_cc - reaction_cs;
     s = s               + reaction_cc + reaction_cs;
-
     // Diffusion of gasses
     a = B_a*a;
     b = B_b*b;
     c = B_c*c;
-
-    if(t%10000==0){
-      // plt::clf();
-      // plot_vector(a,N_grid);
-      // plot_vector(b,N_grid);
-      plot_vector(s,N_grid);
-      // plot_vector(1e6*reaction_ab,N_grid);
-      }
+    // Output
+    if(t%framerate==0){
+      // Live plot
+      // plot_vector(s,N_grid);
+      // Output vectors
+      filename = PATH + "a_t=" + std::to_string(t) + ".dat";
+      a.save(filename,arma::raw_ascii);
+      filename = PATH + "b_t=" + std::to_string(t) + ".dat";
+      b.save(filename,arma::raw_ascii);
+      filename = PATH + "c_t=" + std::to_string(t) + ".dat";
+      c.save(filename,arma::raw_ascii);
+      filename = PATH + "s_t=" + std::to_string(t) + ".dat";
+      s.save(filename,arma::raw_ascii);
+    }
   }
 
-  last_time= printMessageTime("Reached end of main.", start_time,last_time);
+  printMessageTime("Reached end of main.", start_time,last_time);
   return 0;
 }
