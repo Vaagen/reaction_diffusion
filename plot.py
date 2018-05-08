@@ -44,6 +44,54 @@ def getVector(filename):
     f.close()
     return a
 
+def plotMovie(a_files, b_files, c_files, s_files, filename):
+    # Modified from:
+    # Matplotlib Animation Example
+    # author: Jake Vanderplas
+    # email: vanderplas@astro.washington.edu
+    # website: http://jakevdp.github.com
+    # license: BSD
+    fig = plt.figure()
+    ax = plt.axes(xlim=(0, 0.6), ylim=(0, 10))
+    line1, = ax.plot([], [], lw=2)
+    line2, = ax.plot([], [], lw=2)
+    line3, = ax.plot([], [], lw=2)
+    line4, = ax.plot([], [], lw=2)
+
+    # initialization function: plot the background of each frame
+    def init():
+        line1.set_data([], [])
+        line2.set_data([], [])
+        line3.set_data([], [])
+        line4.set_data([], [])
+        return line1, line2, line3, line4
+
+    # animation function.  This is called sequentially
+    def animate(i):
+        x = np.linspace(0,1,param.N_grid)
+        a = getVector(path + a_files[i])
+        b = getVector(path + b_files[i])
+        c = getVector(path + c_files[i])
+        s = getVector(path + s_files[i])
+        # Renormalizing
+        c = [c[j]*100 for j in range(0,len(c))]
+        # s = [s[j] for j in range(0,len(c))]
+        line1.set_data(x, a)
+        line2.set_data(x, b)
+        line3.set_data(x, c)
+        line4.set_data(x, s)
+        return line1, line2, line3, line4,
+
+    # call the animator.  blit=True means only re-draw the parts that have changed.
+    anim = animation.FuncAnimation(fig, animate, init_func=init,
+                                   frames=500, interval=300, blit=True)
+    anim.save(filename, fps=15)
+    plt.show()
+
+'''
+Stuff starts to happen here
+'''
+
 # Source
 path='output/run1/'
 # Get filenames
@@ -69,54 +117,8 @@ for file in filenames:
 getVarFromFile(path + p_file)
 
 # Plotting movie
-# Modified from:
-# Matplotlib Animation Example
-# author: Jake Vanderplas
-# email: vanderplas@astro.washington.edu
-# website: http://jakevdp.github.com
-# license: BSD
-fig = plt.figure()
-ax = plt.axes(xlim=(0, 0.6), ylim=(0, 10))
-line1, = ax.plot([], [], lw=2)
-line2, = ax.plot([], [], lw=2)
-line3, = ax.plot([], [], lw=2)
-line4, = ax.plot([], [], lw=2)
+plotMovie(a_files, b_files, c_files, s_files, 'diffusion_reaction_test.mp4')
 
-# initialization function: plot the background of each frame
-def init():
-    line1.set_data([], [])
-    line2.set_data([], [])
-    line3.set_data([], [])
-    line4.set_data([], [])
-    return line1, line2, line3, line4
-
-# animation function.  This is called sequentially
-def animate(i):
-    x = np.linspace(0,1,param.N_grid)
-    a = getVector(path + a_files[i])
-    b = getVector(path + b_files[i])
-    c = getVector(path + c_files[i])
-    s = getVector(path + s_files[i])
-    # Renormalizing
-    c = [c[j]*100 for j in range(0,len(c))]
-    # s = [s[j] for j in range(0,len(c))]
-    line1.set_data(x, a)
-    line2.set_data(x, b)
-    line3.set_data(x, c)
-    line4.set_data(x, s)
-    return line1, line2, line3, line4,
-
-# call the animator.  blit=True means only re-draw the parts that have changed.
-anim = animation.FuncAnimation(fig, animate, init_func=init,
-                               frames=500, interval=300, blit=True)
-anim.save('basic_animation.mp4', fps=30, extra_args=['-vcodec', 'libx264'])
-
-
-# f = open(path + c_files[40], 'r')
-# a = f.readlines()
-# a = [float(line.strip()) for line in a]
-# f.close()
-#
 # plt.plot(X,a)
-plt.show()
+# plt.show()
 # pause('Showing plot.')
