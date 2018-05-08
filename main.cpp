@@ -104,27 +104,27 @@ int main(int argc, char *argv[]){
   std::ofstream paramFile;
   std::string filename = PATH + "parameters.txt";
   paramFile.open (filename);
-  paramFile << "Delta_t" << '\t' << delta_t << '\n';
-  paramFile << "L" << '\t' << L << '\n';
-  paramFile << "Delta_x" << '\t' << delta_x << '\n';
-  paramFile << "N_grid" << '\t' << N_grid << '\n';
-  paramFile << "f_rate" << '\t' << framerate << '\n';
-  paramFile << "a0" << '\t' << a0 << '\n';
-  paramFile << "b0" << '\t' << b0 << '\n';
-  paramFile << "c0" << '\t' << c0 << '\n';
-  paramFile << "s0" << '\t' << "nan" << '\n';
-  paramFile << "Da0" << '\t' << Da0 << '\n';
-  paramFile << "Db0" << '\t' << Db0 << '\n';
-  paramFile << "Dc0" << '\t' << Dc0 << '\n';
-  paramFile << "R" << '\t' << R << '\n';
-  paramFile << "N1" << '\t' << N1 << '\n';
-  paramFile << "N2" << '\t' << N2 << '\n';
-  paramFile << "CFL_a" << '\t' << CFL_a << '\n';
-  paramFile << "CFL_b" << '\t' << CFL_b << '\n';
-  paramFile << "CFL_c" << '\t' << CFL_c << '\n';
+  paramFile << "delta_t = " << '\t' << delta_t << '\n';
+  paramFile << "L = " << '\t' << L << '\n';
+  paramFile << "delta_x = " << '\t' << delta_x << '\n';
+  paramFile << "N_grid = " << '\t' << N_grid << '\n';
+  paramFile << "f_rate = " << '\t' << framerate << '\n';
+  paramFile << "a0 = " << '\t' << a0 << '\n';
+  paramFile << "b0 = " << '\t' << b0 << '\n';
+  paramFile << "c0 = " << '\t' << c0 << '\n';
+  paramFile << "s0 = " << '\t' << "None" << '\n';
+  paramFile << "Da0 = " << '\t' << Da0 << '\n';
+  paramFile << "Db0 = " << '\t' << Db0 << '\n';
+  paramFile << "Dc0 = " << '\t' << Dc0 << '\n';
+  paramFile << "R = " << '\t' << R << '\n';
+  paramFile << "N1 = " << '\t' << N1 << '\n';
+  paramFile << "N2 = " << '\t' << N2 << '\n';
+  paramFile << "CFL_a = " << '\t' << CFL_a << '\n';
+  paramFile << "CFL_b = " << '\t' << CFL_b << '\n';
+  paramFile << "CFL_c = " << '\t' << CFL_c << '\n';
   paramFile.close();
   std::cout << "All parameters saved to " << filename <<'\n';
-
+return 0;
   // Setup initial vectors.
   arma::Col<double> a(N_grid);
   a.fill(0);
@@ -158,8 +158,8 @@ int main(int argc, char *argv[]){
   arma::SpMat<double> B_c;
   get_euler_explicit_matrix(CFL_c, N_grid, B_c);
 
-  // Propagate time
-  for(int t=0; t<T_steps; t++){
+  // Propagate time (T+1 to include last step so that we save final output as well.)
+  for(int t=0; t<T_steps+1; t++){
     // a + b -> c, NOTE: % is element wise multiplication in Armadillo
     reaction_ab = delta_t*R*(a%b);
     // Nucleation
@@ -189,7 +189,7 @@ int main(int argc, char *argv[]){
       c.save(filename,arma::raw_ascii);
       filename = PATH + "s_t=" + std::to_string(t) + ".dat";
       s.save(filename,arma::raw_ascii);
-      if(t%framerate*10==0){
+      if(t%(framerate*100)==0){
         std::string message = " Passed t-step # " + std::to_string(t);
         last_time = printMessageTime(message, start_time, last_time);
       }
