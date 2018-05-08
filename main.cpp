@@ -61,7 +61,7 @@ int main(int argc, char *argv[]){
   int T = 1000000;
 
   // Decide CFL for a, then decide delta_t from this, letting CFL for b and c be smaller.
-  double CFL_a = 0.49;
+  double CFL_a = 0.08;
   // Boundary conditions
   double a0  = 1.0;
   double b0  = a0*10.0;
@@ -91,17 +91,25 @@ int main(int argc, char *argv[]){
   arma::SpMat<double> B_b;
   get_euler_explicit_matrix(CFL_b, N_grid, B_b);
 
-  // Plot
-  plot_vector(a,N_grid);
+  arma::Col<double> reaction_vec(N_grid);
+  reaction_vec.fill(0);
+
+  // Propagate time and plot.
   for(int t=0; t<T; t++){
+    // Element wise multiplication of a and b as reaction term
+    reaction_vec = (a%b)*delta_t*R;
+    a = a - reaction_vec;
+    b = b - reaction_vec;
     a = B_a*a;
     b = B_b*b;
+
     if(t%10000==0){
+      // plt::clf();
       plot_vector(a,N_grid);
       plot_vector(b,N_grid);
-    }
+      plot_vector(1e6*reaction_vec,N_grid);
+      }
   }
-  plot_vector(a,N_grid);
 
   last_time= printMessageTime("Reached end of main.", start_time,last_time);
   return 0;
