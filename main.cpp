@@ -73,11 +73,11 @@ int main(int argc, char *argv[]){
   double N2  =R/10.0;
   // Simulation time
   int T = 1000000;
+  // Time step
+  // delta_t=0.2 gives CFL_a=0.08, highest possible for explicit scheme with b0=10*a0
+  double delta_t = 0.2;
   // Framerate in how many timesteps between each frame
   int framerate = 10000;
-  // Decide CFL for a, then decide delta_t from this, letting CFL for b and c be smaller.
-  // CFL 0.08 highest possible for explicit scheme with b0=10*a0
-  double CFL_a = 0.08;
   // Boundary conditions
   double a0  = 1.0;
   double b0  = a0*10.0;
@@ -87,21 +87,18 @@ int main(int argc, char *argv[]){
   int N_grid = 1000 + 2;
   // Parameters dependant of the ones above
   double delta_x = L/(N_grid-1);
-  double delta_t = pow(delta_x,2)*CFL_a/Da0;
   int T_steps = T/delta_t;
-  // To have same time step b and c must have seperate CFL numbers, we vary CFL_a since it's largest
+  // CFL number must be different for the gasses to get same time step
+  double CFL_a = Da0*delta_t/pow(delta_x,2);
   double CFL_b = Db0*delta_t/pow(delta_x,2);
   double CFL_c = Dc0*delta_t/pow(delta_x,2);
 
   // Inform user of parameters
   std::cout << "Delta t: " << delta_t << '\n';
   std::cout << "# of points: " << N_grid << '\n';
-  std::cout << "CFL a: " << CFL_a << '\n';
-  std::cout << "CFL b: " << CFL_b << '\n';
-  std::cout << "CFL c: " << CFL_c << '\n';
 
   // Output identifier and path, NB: make folder manually
-  std::string PATH="output/test/";
+  std::string PATH="output/run1/";
   std::cout << "Output files will be saved to " << PATH << '\n';
   // Save parameters
   std::ofstream paramFile;
@@ -192,6 +189,10 @@ int main(int argc, char *argv[]){
       c.save(filename,arma::raw_ascii);
       filename = PATH + "s_t=" + std::to_string(t) + ".dat";
       s.save(filename,arma::raw_ascii);
+      if(t%framerate*10==0){
+        std::string message = " Passed t-step # " + t;
+        last_time = printMessageTime(message, start_time, last_time);
+      }
     }
   }
 
