@@ -190,7 +190,7 @@ int main(int argc, char *argv[]){
       filename = PATH + "s_t=" + std::to_string(t) + ".dat";
       s.save(filename,arma::raw_ascii);
       if(t%framerate*10==0){
-        std::string message = " Passed t-step # " + t;
+        std::string message = " Passed t-step # " + std::to_string(t);
         last_time = printMessageTime(message, start_time, last_time);
       }
     }
