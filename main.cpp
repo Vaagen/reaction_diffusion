@@ -104,7 +104,7 @@ int main(int argc, char *argv[]){
   // Clogging effect
   double s0 = 0.01;
   // Grid size
-  int N_grid = 1000 + 2;
+  int N_grid = 1002;
   // Parameters dependant of the ones above
   double delta_x = L/(N_grid-1);
   int T_steps = T/delta_t;
@@ -118,7 +118,7 @@ int main(int argc, char *argv[]){
   std::cout << "# of points: " << N_grid << '\n';
 
   // Output identifier and path, NB: make folder manually
-  std::string PATH="output/test/";
+  std::string PATH="output/run_dc2/";
   std::cout << "Output files will be saved to " << PATH << '\n';
   // Save parameters
   std::ofstream paramFile;
@@ -192,7 +192,7 @@ int main(int argc, char *argv[]){
     step_func(c, c0, above_critical_c);
     reaction_cc = delta_t*N1*(above_critical_c % (c%c));
     // To include nucleation times.
-    // update_nucleation_times(t, N_grid, t_nucleation, above_critical_c);
+    update_nucleation_times(t, N_grid, t_nucleation, above_critical_c);
     // Deposition on existing solids
     reaction_cs = delta_t*N2*(c%s);
     // Add reaction terms
@@ -202,7 +202,7 @@ int main(int argc, char *argv[]){
     c = c + reaction_ab - reaction_cc - reaction_cs;
     s = s               + reaction_cc + reaction_cs;
     // Diffusion of gasses
-    // Varying D, a is supposed to be sent 2 times, one without reference to copy.
+    // Varying D
     // u = 1.0/(1+s/s0);
     // diffusion_varying_D(delta_t, delta_x, N_grid, Da0, a, a, u);
     // diffusion_varying_D(delta_t, delta_x, N_grid, Db0, b, b, u);
@@ -211,16 +211,10 @@ int main(int argc, char *argv[]){
     a = B_a*a;
     b = B_b*b;
     c = B_c*c;
-    // Diffusion and reactions at once.
+    // Diffusion and reactions at once. A little less stable.
     // a = B_a*a - reaction_ab;
     // b = B_b*b - reaction_ab;
     // c = B_c*c + reaction_ab - reaction_cc - reaction_cs;
-
-    for(int i =0; i<N_grid; ++i){
-      if(a(i)<0){
-        std::cout << i << '\n';
-      }
-    }
 
     // Output
     if(t%framerate==0){
