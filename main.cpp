@@ -84,23 +84,22 @@ int main(int argc, char *argv[]){
   double Dc0 =8.0/15.0*Da0;
   // Reaction rate a + b -> c
   double R   =1.0/L;
-  // R = 0.1;
   // Reaction rate for nucleation
   double N1  =R/10.0;
   // Reaction rate for deposition on solid
   double N2  =R/10.0;
   // Simulation time
-  int T = 1000000;
+  int T = 700000;
   // Time step
   // delta_t=0.2 gives CFL_a=0.08, highest possible for explicit scheme with b0=10*a0
-  double delta_t = 0.2;
+  double delta_t = 0.1;
   // Framerate in how many timesteps between each frame
   int framerate = 10000;
   // Boundary conditions
   double a0  = 1.0;
   double b0  = a0*10.0;
   // Nucleation threshold
-  double c0 = 0.03;
+  double c0 = 0.05;
   // Clogging effect
   double s0 = 0.01;
   // Grid size
@@ -118,7 +117,7 @@ int main(int argc, char *argv[]){
   std::cout << "# of points: " << N_grid << '\n';
 
   // Output identifier and path, NB: make folder manually
-  std::string PATH="output/run_dc2/";
+  std::string PATH="output/run_dc4/";
   std::cout << "Output files will be saved to " << PATH << '\n';
   // Save parameters
   std::ofstream paramFile;
@@ -219,8 +218,8 @@ int main(int argc, char *argv[]){
     // Output
     if(t%framerate==0){
       // Live plot
-      // plot_vector(a,N_grid);
-      // plot_vector(b,N_grid);
+      plot_vector(a,N_grid);
+      plot_vector(b,N_grid);
       // Output vectors
       filename = PATH + "a_t=" + std::to_string(t) + ".dat";
       a.save(filename,arma::raw_ascii);
