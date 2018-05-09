@@ -1,6 +1,7 @@
 ## Personal
 run*
 output/
+.DS_Store
 
 
 ## Core latex/pdflatex auxiliary files:
