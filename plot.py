@@ -5,6 +5,7 @@ matplotlib.use('TKAgg')
 
 
 import numpy as np
+import peakutils
 import matplotlib.pyplot as plt
 import matplotlib.animation as animation
 import os, sys
@@ -14,7 +15,7 @@ import imp
 
 def pause(message=''):
     print(message)
-    programPause = raw_input("Press <ENTER> to continue...")
+    programPause = input("Press <ENTER> to continue...")
 
 # To get parameters, taken from https://stackoverflow.com/questions/924700/best-way-to-retrieve-variable-values-from-a-text-file-python-json?utm_medium=organic&utm_source=google_rich_qa&utm_campaign=google_rich_qa
 def getVarFromFile(filename):
@@ -93,7 +94,7 @@ Stuff starts to happen here
 '''
 
 # Source
-path='output/run1/'
+path='output/run2/'
 # Get filenames
 filenames = os.listdir(path)
 # Sort to get correct time ordering
@@ -113,12 +114,35 @@ for file in filenames:
         s_files.append(file)
     if file[0]=="p":
         p_file = file
+    if file[0]=="t":
+        t_nucleation_file= file
 # Get parameters
 getVarFromFile(path + p_file)
 
 # Plotting movie
-plotMovie(a_files, b_files, c_files, s_files, 'diffusion_reaction_test.mp4')
+# plotMovie(a_files, b_files, c_files, s_files, 'diffusion_reaction_test.mp4')
 
-# plt.plot(X,a)
-# plt.show()
-# pause('Showing plot.')
+# Looking at peaks
+i = 200
+x = np.linspace(0,1,param.N_grid)
+s = getVector(path + s_files[i])
+peaks = peakutils.indexes(s, thres=0.02/max(s), min_dist=0.01)
+peaknums = range(1,len(peaks))
+peak_x = [x[j] for j in peaks]
+peak_s = [s[j] for j in peaks]
+fig1=plt.figure(1)
+plt.plot(x,s)
+plt.plot(peak_x,peak_s,'rx')
+delta_peak_x = np.diff(peak_x)
+fig2=plt.figure(2)
+plt.plot(peaknums, list(reversed(delta_peak_x)))
+fig3 = plt.figure(3)
+peak_t = getVector(path + t_nucleation_file)
+peak_t = [peak_t[j] for j in peaks]
+delta_peak_t = -np.diff(peak_t)
+plt.plot(peaknums, list(reversed(delta_peak_t*param.delta_t)))
+# Look
+
+
+plt.show(block=False)
+pause('Showing plot.')

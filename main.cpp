@@ -98,7 +98,7 @@ int main(int argc, char *argv[]){
   std::cout << "# of points: " << N_grid << '\n';
 
   // Output identifier and path, NB: make folder manually
-  std::string PATH="output/run1/";
+  std::string PATH="output/run3/";
   std::cout << "Output files will be saved to " << PATH << '\n';
   // Save parameters
   std::ofstream paramFile;
@@ -124,7 +124,7 @@ int main(int argc, char *argv[]){
   paramFile << "CFL_c = " << '\t' << CFL_c << '\n';
   paramFile.close();
   std::cout << "All parameters saved to " << filename <<'\n';
-return 0;
+
   // Setup initial vectors.
   arma::Col<double> a(N_grid);
   a.fill(0);
@@ -157,6 +157,9 @@ return 0;
   get_euler_explicit_matrix(CFL_b, N_grid, B_b);
   arma::SpMat<double> B_c;
   get_euler_explicit_matrix(CFL_c, N_grid, B_c);
+  // To save timesteps when nucleation happens
+  arma::Col<int> t_nucleation(N_grid);
+  t_nucleation.fill(0);
 
   // Propagate time (T+1 to include last step so that we save final output as well.)
   for(int t=0; t<T_steps+1; t++){
@@ -165,6 +168,12 @@ return 0;
     // Nucleation
     step_func(c, c0, above_critical_c);
     reaction_cc = delta_t*N1*(above_critical_c % (c%c));
+    // To include nucleation times.
+    // for (int j=0; j<N_grid; ++j){
+    //   if(t_nucleation(j)==0 && above_critical_c(j)>0){
+    //     t_nucleation(j)=t;
+    //   }
+    // }
     // Deposition on existing solids
     reaction_cs = delta_t*N2*(c%s);
     // Add reaction terms
@@ -176,6 +185,10 @@ return 0;
     a = B_a*a;
     b = B_b*b;
     c = B_c*c;
+    // a = B_a*a - reaction_ab;
+    // b = B_b*b - reaction_ab;
+    // c = B_c*c + reaction_ab - reaction_cc - reaction_cs;
+
     // Output
     if(t%framerate==0){
       // Live plot
@@ -195,6 +208,9 @@ return 0;
       }
     }
   }
+
+  filename = PATH + "t_nucleation.dat";
+  t_nucleation.save(filename,arma::raw_ascii);
 
   printMessageTime("Reached end of main.", start_time,last_time);
   return 0;
