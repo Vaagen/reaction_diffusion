@@ -32,10 +32,28 @@ void get_euler_explicit_matrix(double alpha, int N_grid, arma::SpMat<double>& B)
   }
 }
 
-void step_func(arma::Col<double>& c, double c0, arma::Col<double>& above_critical_c){
+void step_func(arma::Col<double>& c, double c0, arma::Col<int>& above_critical_c){
   for(int i=0; i<c.n_elem; i++){
     above_critical_c(i) = c(i) > c0;
   }
+}
+
+void update_nucleation_times(int t, int N_grid, arma::Col<int>& t_nucleation, arma::Col<int>& above_critical_c){
+  for (int j=0; j<N_grid; ++j){
+    if(t_nucleation(j)==0 && above_critical_c(j)>0){
+      t_nucleation(j)=t;
+    }
+  }
+}
+
+void diffusion_varying_D(double delta_t, double delta_x,int N_grid, double D0, arma::Col<double>& new_a, arma::Col<double> a, arma::Col<double> u){
+  // Calculate diffusion term
+  u *= D0;
+  // Euler scheme with centeral difference
+  for(int x=1; x<N_grid-1; ++x){
+    new_a(x) = a(x) + 0.25*delta_t/delta_x/delta_x*( u(x+1) - u(x-1) )*( a(x+1) - a(x-1) ) + u(x)/delta_x/delta_x*( a(x+1) -2*a(x) + a(x-1) );
+  }
+  // Note that boundaries are unchanging
 }
 
 void plot_vector(arma::Col<double> arma_vec, int N_grid){
@@ -50,7 +68,6 @@ void plot_vector(arma::Col<double> arma_vec, int N_grid){
   plt::pause(0.001);
   // std::cout << "Press enter to continue." << std::endl;
   // getchar();
-
 }
 
 int main(int argc, char *argv[]){
@@ -67,6 +84,7 @@ int main(int argc, char *argv[]){
   double Dc0 =8.0/15.0*Da0;
   // Reaction rate a + b -> c
   double R   =1.0/L;
+  // R = 0.1;
   // Reaction rate for nucleation
   double N1  =R/10.0;
   // Reaction rate for deposition on solid
@@ -83,6 +101,8 @@ int main(int argc, char *argv[]){
   double b0  = a0*10.0;
   // Nucleation threshold
   double c0 = 0.03;
+  // Clogging effect
+  double s0 = 0.01;
   // Grid size
   int N_grid = 1000 + 2;
   // Parameters dependant of the ones above
@@ -98,7 +118,7 @@ int main(int argc, char *argv[]){
   std::cout << "# of points: " << N_grid << '\n';
 
   // Output identifier and path, NB: make folder manually
-  std::string PATH="output/run3/";
+  std::string PATH="output/Dtest4/";
   std::cout << "Output files will be saved to " << PATH << '\n';
   // Save parameters
   std::ofstream paramFile;
@@ -112,7 +132,7 @@ int main(int argc, char *argv[]){
   paramFile << "a0 = " << '\t' << a0 << '\n';
   paramFile << "b0 = " << '\t' << b0 << '\n';
   paramFile << "c0 = " << '\t' << c0 << '\n';
-  paramFile << "s0 = " << '\t' << "None" << '\n';
+  paramFile << "s0 = " << '\t' << s0 << '\n';
   paramFile << "Da0 = " << '\t' << Da0 << '\n';
   paramFile << "Db0 = " << '\t' << Db0 << '\n';
   paramFile << "Dc0 = " << '\t' << Dc0 << '\n';
@@ -143,23 +163,24 @@ int main(int argc, char *argv[]){
   arma::Col<double> reaction_cc(N_grid);
   reaction_cc.fill(0);
   // To check if c > c0
-  arma::Col<double> above_critical_c(N_grid);
+  arma::Col<int> above_critical_c(N_grid);
   above_critical_c.fill(0);
   // To store reaction terms N2*c*s
   arma::Col<double> reaction_cs(N_grid);
   reaction_cs.fill(0);
-
-  // Explicit Euler for diffusion terms
-  // Set up matrices
+  // To save timesteps when nucleation happens
+  arma::Col<int> t_nucleation(N_grid);
+  t_nucleation.fill(0);
+  // To ease computation of how D changes, u = 1/(1+s/s0)
+  arma::Col<double> u;
+  u.fill(0);
+  // Explicit Euler matrices for diffusion terms
   arma::SpMat<double> B_a;
   get_euler_explicit_matrix(CFL_a, N_grid, B_a);
   arma::SpMat<double> B_b;
   get_euler_explicit_matrix(CFL_b, N_grid, B_b);
   arma::SpMat<double> B_c;
   get_euler_explicit_matrix(CFL_c, N_grid, B_c);
-  // To save timesteps when nucleation happens
-  arma::Col<int> t_nucleation(N_grid);
-  t_nucleation.fill(0);
 
   // Propagate time (T+1 to include last step so that we save final output as well.)
   for(int t=0; t<T_steps+1; t++){
@@ -169,11 +190,7 @@ int main(int argc, char *argv[]){
     step_func(c, c0, above_critical_c);
     reaction_cc = delta_t*N1*(above_critical_c % (c%c));
     // To include nucleation times.
-    // for (int j=0; j<N_grid; ++j){
-    //   if(t_nucleation(j)==0 && above_critical_c(j)>0){
-    //     t_nucleation(j)=t;
-    //   }
-    // }
+    // update_nucleation_times(t, N_grid, t_nucleation, above_critical_c);
     // Deposition on existing solids
     reaction_cs = delta_t*N2*(c%s);
     // Add reaction terms
@@ -182,9 +199,16 @@ int main(int argc, char *argv[]){
     c = c + reaction_ab - reaction_cc - reaction_cs;
     s = s               + reaction_cc + reaction_cs;
     // Diffusion of gasses
-    a = B_a*a;
-    b = B_b*b;
-    c = B_c*c;
+    // Varying D, a is supposed to be sent 2 times, one without reference to copy.
+    u = 1.0/(1+s/s0);
+    diffusion_varying_D(delta_t, delta_x, N_grid, Da0, a, a, u);
+    diffusion_varying_D(delta_t, delta_x, N_grid, Db0, b, b, u);
+    diffusion_varying_D(delta_t, delta_x, N_grid, Dc0, c, c, u);
+    // Constant D
+    // a = B_a*a;
+    // b = B_b*b;
+    // c = B_c*c;
+    // Diffusion and reactions at once.
     // a = B_a*a - reaction_ab;
     // b = B_b*b - reaction_ab;
     // c = B_c*c + reaction_ab - reaction_cc - reaction_cs;
@@ -192,7 +216,8 @@ int main(int argc, char *argv[]){
     // Output
     if(t%framerate==0){
       // Live plot
-      // plot_vector(s,N_grid);
+      // plot_vector(a,N_grid);
+      // plot_vector(b,N_grid);
       // Output vectors
       filename = PATH + "a_t=" + std::to_string(t) + ".dat";
       a.save(filename,arma::raw_ascii);
