@@ -24,7 +24,8 @@ def pause(message=''):
     programPause = input("Press <ENTER> to continue...")
 
 def getVarFromFile(filename):
-    # To get parameters, taken from https://stackoverflow.com/questions/924700/best-way-to-retrieve-variable-values-from-a-text-file-python-json?utm_medium=organic&utm_source=google_rich_qa&utm_campaign=google_rich_qa
+    # To get parameters,
+    # taken from https://stackoverflow.com/questions/924700/best-way-to-retrieve-variable-values-from-a-text-file-python-json?utm_medium=organic&utm_source=google_rich_qa&utm_campaign=google_rich_qa
     import imp
     f = open(filename)
     global param
@@ -32,14 +33,16 @@ def getVarFromFile(filename):
     f.close()
 
 def tryint(s):
-    # To sort filenames, taken from https://stackoverflow.com/questions/4623446/how-do-you-sort-files-numerically?utm_medium=organic&utm_source=google_rich_qa&utm_campaign=google_rich_qa
+    # To sort filenames,
+    # taken from https://stackoverflow.com/questions/4623446/how-do-you-sort-files-numerically?utm_medium=organic&utm_source=google_rich_qa&utm_campaign=google_rich_qa
     try:
         return int(s)
     except:
         return s
 
 def alphanum_key(s):
-    # To sort filenames, taken from https://stackoverflow.com/questions/4623446/how-do-you-sort-files-numerically?utm_medium=organic&utm_source=google_rich_qa&utm_campaign=google_rich_qa
+    # To sort filenames,
+    # taken from https://stackoverflow.com/questions/4623446/how-do-you-sort-files-numerically?utm_medium=organic&utm_source=google_rich_qa&utm_campaign=google_rich_qa
     """ Turn a string into a list of string and number chunks.
         "z23a" -> ["z", 23, "a"]
     """

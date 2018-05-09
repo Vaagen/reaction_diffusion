@@ -118,7 +118,7 @@ int main(int argc, char *argv[]){
   std::cout << "# of points: " << N_grid << '\n';
 
   // Output identifier and path, NB: make folder manually
-  std::string PATH="output/Dtest4/";
+  std::string PATH="output/test/";
   std::cout << "Output files will be saved to " << PATH << '\n';
   // Save parameters
   std::ofstream paramFile;
@@ -186,6 +186,8 @@ int main(int argc, char *argv[]){
   for(int t=0; t<T_steps+1; t++){
     // a + b -> c, NOTE: % is element wise multiplication in Armadillo
     reaction_ab = delta_t*R*(a%b);
+    // For 2a + b -> c
+    // reaction_ab = delta_t*R*(a%a%b);
     // Nucleation
     step_func(c, c0, above_critical_c);
     reaction_cc = delta_t*N1*(above_critical_c % (c%c));
@@ -195,23 +197,30 @@ int main(int argc, char *argv[]){
     reaction_cs = delta_t*N2*(c%s);
     // Add reaction terms
     a = a - reaction_ab;
+    // a = a - 2*reaction_ab
     b = b - reaction_ab;
     c = c + reaction_ab - reaction_cc - reaction_cs;
     s = s               + reaction_cc + reaction_cs;
     // Diffusion of gasses
     // Varying D, a is supposed to be sent 2 times, one without reference to copy.
-    u = 1.0/(1+s/s0);
-    diffusion_varying_D(delta_t, delta_x, N_grid, Da0, a, a, u);
-    diffusion_varying_D(delta_t, delta_x, N_grid, Db0, b, b, u);
-    diffusion_varying_D(delta_t, delta_x, N_grid, Dc0, c, c, u);
+    // u = 1.0/(1+s/s0);
+    // diffusion_varying_D(delta_t, delta_x, N_grid, Da0, a, a, u);
+    // diffusion_varying_D(delta_t, delta_x, N_grid, Db0, b, b, u);
+    // diffusion_varying_D(delta_t, delta_x, N_grid, Dc0, c, c, u);
     // Constant D
-    // a = B_a*a;
-    // b = B_b*b;
-    // c = B_c*c;
+    a = B_a*a;
+    b = B_b*b;
+    c = B_c*c;
     // Diffusion and reactions at once.
     // a = B_a*a - reaction_ab;
     // b = B_b*b - reaction_ab;
     // c = B_c*c + reaction_ab - reaction_cc - reaction_cs;
+
+    for(int i =0; i<N_grid; ++i){
+      if(a(i)<0){
+        std::cout << i << '\n';
+      }
+    }
 
     // Output
     if(t%framerate==0){
