@@ -165,7 +165,7 @@ It shows the behavior of the system more dynamically than any of the static plot
 	\centering
 	\includegraphics[width=\linewidth]{../figures/standard_settings_time.png}
 	\caption{Here we have the standard values of the parameters as defined in the task, plotted for three different times to see the behavior. To see the time evolution better check the .mp4 file included in the accompanying folder. We see from the figure that $c$ has been produced until it reaches $c_0$ at some point, here shifted towards the left due to higher $b_0$. When we get a nucleation point for s and c is allowed to aggregate here, we get a peak that depletes the immediate surrounding for $c$. $b$ then propagates further to the left, making $c$ build up to $c_0$ again, but now shifted to the left. We see that the  remaining $c$ trapped between two peaks spreads, aggregating on the two nearest peaks.}
-	\label{fig:coords}
+	\label{fig:stand}
 \end{figure}
 
 \begin{figure}
@@ -185,35 +185,35 @@ It shows the behavior of the system more dynamically than any of the static plot
 \begin{figure}
 	\centering
 	\includegraphics[width=\linewidth]{../figures/Da0_same_ratio.png}
-	\caption{Coordinates.}
+	\caption{Changing $D_a$, but keeping the relative factor between $D_b$ and $D_c$, we expect there to be fewer peaks in a given amount of time simply because $a$ and $b$ diffuse more slowly towards each other. This is clearly seen in the plot. One might expect that the larger relative $R$ means that c is produced more evenly, thus spreading the peaks. However, $c$ also diffuses more slowly, apparently cancelling out this effect.}
 	\label{fig:coords}
 \end{figure}
 
 \begin{figure}
 	\centering
 	\includegraphics[width=\linewidth]{../figures/peak_growth.png}
-	\caption{Coordinates.}
+	\caption{Reproducing the bahavior presented in \cite{einarsrud}, we here have how the height of the different peaks evolve with time. As discussed in Figure \ref{fig:stand}, we see that the $c$ trapped between two peaks help grow the previous peak while the new one is forming.}
 	\label{fig:coords}
 \end{figure}
 
 \begin{figure}
 	\centering
 	\includegraphics[width=\linewidth]{../figures/deltaC0_s.png}
-	\caption{Coordinates.}
-	\label{fig:coords}
+	\caption{Changing $c_0$ affects how fast $c$ reaches the nucleation threshold, thus affecting the distance between the peaks. Lower $c_0$ therefore gives lower distance between the peaks, see Figure \ref{fig:peakx}. A peak finding algorithm in scipy.signal was used to find the peaks indicated in this figure.}
+	\label{fig:peak}
 \end{figure}
 
 \begin{figure}
 	\centering
 	\includegraphics[width=\linewidth]{../figures/deltaC0_x.png}
-	\caption{Coordinates.}
-	\label{fig:coords}
+	\caption{Distance $\xi_n$ between peak $n$ and $n+1$. As discussed in Figure \ref{fig:peak} the distance increases for lower $c_0$. Also, we see clearly that the distance decreases as we get closer to the source of $a$, where $a$ can get replenished faster and the offset from the higher $b_0$ is cancelled.}
+	\label{fig:peakx}
 \end{figure}
 
 \begin{figure}
 	\centering
 	\includegraphics[width=\linewidth]{../figures/deltaC0_t.png}
-	\caption{Coordinates.}
+	\caption{Plots the time between formation of peak number $n$ and peak number $n+1$, as a supplement to the discussion in Figures \ref{fig:peak} and \ref{fig:peakx}. The longer times might at first seem counterintuitive from the shorter spacing, but this is since $c$ correspondingly aggregates on the previous peak longer, see the resulting higher peaks in Figure \ref{fig:peak}.}
 	\label{fig:coords}
 \end{figure}
 
