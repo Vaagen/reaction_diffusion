@@ -89,26 +89,82 @@ However, with an implicit solution I was still not able to increase the time ste
 This was because the reaction term became unstable for approximately the same time step that the explicit scheme diverged, which can be understood by considering that the reaction term essentially works on a different timescale as stated above.
 Because of this I decided to stick with the explicit solution, as it includes less calculations at the time resolution needed to handle the reaction terms.
 
-The 
+In the above $D_g$ was assumed to be constant. For a spatially varying $D_g$ i decided to give up the matrix formulation of the diffusion term, since I found a nice way to update this using Armadillo's vector notation.
+With 
+\begin{equation}
+\mathbf{D}_g = D_{g,0} \frac{1}{1+\mathbf{s}/s_0} = D_{g,0} \mathbf{u},
+\end{equation}
+I could write, using the notation that $u_\pm = u(t,x \pm \delta x)$,
+\begin{equation}
+g(t+\delta t, x) = g +  \frac{\delta t D_{g,0}}{4\delta x^2} (u_+ - u_-)( g_+ - g_-) + u \frac{\delta t D_{g,0}}{\delta x^2}(g_+ -2g + g_-).
+\label{varyd}
+\end{equation}
+This resulted in the following procedure to update the states for a timestep, with diffusion\_varying\_D() applying \eqref{varyd}:
+\begin{lstlisting}
+    // a + b -> c, NOTE: % is element wise multiplication in Armadillo
+    reaction_ab = delta_t*R*(a%b);
+    // Nucleation
+    step_func(c, c0, above_critical_c);
+    reaction_cc = delta_t*N1*(above_critical_c % (c%c));
+    // Deposition on existing solids
+    reaction_cs = delta_t*N2*(c%s);
+    // Add reaction terms
+    a = a - reaction_ab;
+    b = b - reaction_ab;
+    c = c + reaction_ab - reaction_cc - reaction_cs;
+    s = s               + reaction_cc + reaction_cs;
+    // Diffusion of gasses
+    // Varying D
+    u = 1.0/(1.0+s/s0);
+    diffusion_varying_D(delta_t, delta_x, N_grid, Da0, a, a, u);
+    diffusion_varying_D(delta_t, delta_x, N_grid, Db0, b, b, u);
+    diffusion_varying_D(delta_t, delta_x, N_grid, Dc0, c, c, u);
+\end{lstlisting}
 
-\begin{figure}[h]
-	\centering
-	\includegraphics[width=\linewidth]{../figures/standard_settings_time.png}
-	\caption{Coordinates.}
-	\label{fig:coords}
-\end{figure}
+When looking at the reaction where 2 molecules of $a$ react with one of $b$, I have assumed that the reaction rate will be proportional to the square of concentration of  $a$ while being linear in that of $b$. Additionally, the reaction term must be subtracted twice from the concentration of $a$. This approach requires the reaction coefficient $R$ to be redefined, however this is expected since it describes another reaction.
+\begin{lstlisting}
+    // For 2a + b -> c, NOTE: % is element wise multiplication in Armadillo
+    reaction_ab = delta_t*R*(a%a%b);
+    // Nucleation
+    step_func(c, c0, above_critical_c);
+    reaction_cc = delta_t*N1*(above_critical_c % (c%c));
+    // Deposition on existing solids
+    reaction_cs = delta_t*N2*(c%s);
+    // Add reaction terms
+    a = a - 2*reaction_ab;
+    b = b - reaction_ab;
+    c = c + reaction_ab - reaction_cc - reaction_cs;
+    s = s               + reaction_cc + reaction_cs;
+    // Diffusion of gasses
+    // Constant D
+    a = B_a*a;
+    b = B_b*b;
+    c = B_c*c;
+\end{lstlisting}
+
+Since we get a lot of plots, I found it more tidy to describe the results and behavior of the system in corresponding figure captions.
+The parameters used are listed in each figure. 
+Additionally, a .mp4 file is included in the folder accompanying this document.
+It shows the behavior of the system more dynamically than any of the static plots.
 
 \begin{figure}
 	\centering
 	\includegraphics[width=\linewidth]{../figures/R0.png}
-	\caption{Coordinates.}
+	\caption{Here $R$ is set to zero. I used this plot to check that my implementation of the diffusion term was correct. We get the expected form of diffusion for both $a$ and $b$. The used parameters are indicated. The f\_rate variable is used to indicate how often the loop should save output.}
 	\label{fig:coords}
 \end{figure}
 
 \begin{figure}
 	\centering
 	\includegraphics[width=\linewidth]{../figures/N0.png}
-	\caption{Coordinates.}
+	\caption{Here $R$ is non-zero, but we have $N_1$ and $N_2$ zero, we see the production of $c$ as well as the diffusion of all thee gasses as expected.}
+	\label{fig:coords}
+\end{figure}
+
+\begin{figure}[h]
+	\centering
+	\includegraphics[width=\linewidth]{../figures/standard_settings_time.png}
+	\caption{}
 	\label{fig:coords}
 \end{figure}
 
