@@ -38,7 +38,8 @@ void step_func(arma::Col<double>& c, double c0, arma::Col<int>& above_critical_c
   }
 }
 
-void update_nucleation_times(int t, int N_grid, arma::Col<int>& t_nucleation, arma::Col<int>& above_critical_c){
+void update_nucleation_times(int t, int N_grid, arma::Col<int>& t_nucleation,
+                              arma::Col<int>& above_critical_c){
   for (int j=0; j<N_grid; ++j){
     if(t_nucleation(j)==0 && above_critical_c(j)>0){
       t_nucleation(j)=t;
@@ -46,12 +47,14 @@ void update_nucleation_times(int t, int N_grid, arma::Col<int>& t_nucleation, ar
   }
 }
 
-void diffusion_varying_D(double delta_t, double delta_x,int N_grid, double D0, arma::Col<double>& new_a, arma::Col<double> a, arma::Col<double> u){
+void diffusion_varying_D(double delta_t, double delta_x,int N_grid, double D0,
+          arma::Col<double>& new_a, arma::Col<double> a, arma::Col<double> u){
   // Calculate diffusion term
   u *= D0;
   // Euler scheme with centeral difference
   for(int x=1; x<N_grid-1; ++x){
-    new_a(x) = a(x) + 0.25*delta_t/delta_x/delta_x*( u(x+1) - u(x-1) )*( a(x+1) - a(x-1) ) + u(x)/delta_x/delta_x*( a(x+1) -2*a(x) + a(x-1) );
+    new_a(x) = a(x) + 0.25*delta_t/delta_x/delta_x*( u(x+1) - u(x-1) )*( a(x+1) - a(x-1) )
+              + u(x)*delta_t/delta_x/delta_x*( a(x+1) -2*a(x) + a(x-1) );
   }
   // Note that boundaries are unchanging
 }
@@ -84,6 +87,7 @@ int main(int argc, char *argv[]){
   double Dc0 =8.0/15.0*Da0;
   // Reaction rate a + b -> c
   double R   =1.0/L;
+  R=0.1;
   // Reaction rate for nucleation
   double N1  =R/10.0;
   // Reaction rate for deposition on solid
@@ -99,9 +103,9 @@ int main(int argc, char *argv[]){
   double a0  = 1.0;
   double b0  = a0*10.0;
   // Nucleation threshold
-  double c0 = 0.05;
+  double c0 = 0.03;
   // Clogging effect
-  double s0 = 0.01;
+  double s0 = 0.001;
   // Grid size
   int N_grid = 1002;
   // Parameters dependant of the ones above
@@ -117,7 +121,7 @@ int main(int argc, char *argv[]){
   std::cout << "# of points: " << N_grid << '\n';
 
   // Output identifier and path, NB: make folder manually
-  std::string PATH="output/run_dc4/";
+  std::string PATH="output/run_s13/";
   std::cout << "Output files will be saved to " << PATH << '\n';
   // Save parameters
   std::ofstream paramFile;
@@ -196,20 +200,20 @@ int main(int argc, char *argv[]){
     reaction_cs = delta_t*N2*(c%s);
     // Add reaction terms
     a = a - reaction_ab;
-    // a = a - 2*reaction_ab
+    // a = a - 2*reaction_ab;
     b = b - reaction_ab;
     c = c + reaction_ab - reaction_cc - reaction_cs;
     s = s               + reaction_cc + reaction_cs;
     // Diffusion of gasses
     // Varying D
-    // u = 1.0/(1+s/s0);
-    // diffusion_varying_D(delta_t, delta_x, N_grid, Da0, a, a, u);
-    // diffusion_varying_D(delta_t, delta_x, N_grid, Db0, b, b, u);
-    // diffusion_varying_D(delta_t, delta_x, N_grid, Dc0, c, c, u);
+    u = 1.0/(1.0+s/s0);
+    diffusion_varying_D(delta_t, delta_x, N_grid, Da0, a, a, u);
+    diffusion_varying_D(delta_t, delta_x, N_grid, Db0, b, b, u);
+    diffusion_varying_D(delta_t, delta_x, N_grid, Dc0, c, c, u);
     // Constant D
-    a = B_a*a;
-    b = B_b*b;
-    c = B_c*c;
+    // a = B_a*a;
+    // b = B_b*b;
+    // c = B_c*c;
     // Diffusion and reactions at once. A little less stable.
     // a = B_a*a - reaction_ab;
     // b = B_b*b - reaction_ab;
@@ -218,8 +222,8 @@ int main(int argc, char *argv[]){
     // Output
     if(t%framerate==0){
       // Live plot
-      plot_vector(a,N_grid);
-      plot_vector(b,N_grid);
+      // plot_vector(a,N_grid);
+      // plot_vector(b,N_grid);
       // Output vectors
       filename = PATH + "a_t=" + std::to_string(t) + ".dat";
       a.save(filename,arma::raw_ascii);

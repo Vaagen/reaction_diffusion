@@ -24,8 +24,13 @@ def pause(message=''):
     programPause = input("Press <ENTER> to continue...")
 
 def getVarFromFile(filename):
-    # To get parameters,
-    # taken from https://stackoverflow.com/questions/924700/best-way-to-retrieve-variable-values-from-a-text-file-python-json?utm_medium=organic&utm_source=google_rich_qa&utm_campaign=google_rich_qa
+    '''
+        To get parameters,
+        taken from https://stackoverflow.com/questions/924700/
+                best-way-to-retrieve-variable-values-from-a-text-
+                file-python-json?utm_medium=organic&utm_source=google_rich_
+                qa&utm_campaign=google_rich_qa
+    '''
     import imp
     f = open(filename)
     # global param
@@ -34,19 +39,26 @@ def getVarFromFile(filename):
     return param
 
 def tryint(s):
-    # To sort filenames,
-    # taken from https://stackoverflow.com/questions/4623446/how-do-you-sort-files-numerically?utm_medium=organic&utm_source=google_rich_qa&utm_campaign=google_rich_qa
+    '''
+        To sort filenames,
+        taken from https://stackoverflow.com/questions/4623446/
+                how-do-you-sort-files-numerically?utm_medium=organic&utm_
+                source=google_rich_qa&utm_campaign=google_rich_qa
+    '''
     try:
         return int(s)
     except:
         return s
 
 def alphanum_key(s):
-    # To sort filenames,
-    # taken from https://stackoverflow.com/questions/4623446/how-do-you-sort-files-numerically?utm_medium=organic&utm_source=google_rich_qa&utm_campaign=google_rich_qa
-    """ Turn a string into a list of string and number chunks.
+    '''
+        To sort filenames,
+        taken from https://stackoverflow.com/questions/4623446/
+                how-do-you-sort-files-numerically?utm_medium=organic&utm_
+                source=google_rich_qa&utm_campaign=google_rich_qa
+        Turn a string into a list of string and number chunks.
         "z23a" -> ["z", 23, "a"]
-    """
+    '''
     return [ tryint(c) for c in re.split('([0-9]+)', s) ]
 
 def getVector(filename):
@@ -123,7 +135,7 @@ def get_s_from(path, time, name):
 
 if __name__ == "__main__":
     # Source
-    path='output/run_s6/'
+    path='output/run_s12/'
     # Get filenames
     filenames = os.listdir(path)
     # Sort to get correct time ordering
@@ -160,35 +172,41 @@ if __name__ == "__main__":
     legend = ['a', 'b', '100*c', 's']
 
     # Plotting movie
-    # plotMovie(a_files, b_files, c_files, s_files, 'standard_params.mp4',legend=legend)
+    # plotMovie(a_files, b_files, c_files, s_files, 'test.mp4',legend=legend)
 
     # Plot of concentrations
-    fig1, (ax1, ax2, ax3) = plt.subplots(3, 1, sharex=True)
-
-    frame = len(s_files)-1
-    T = frame*param.f_rate*param.delta_t
-
+    # fig1, (ax1, ax2, ax3) = plt.subplots(3, 1, sharex=True)
+    fig1, ax1 = plt.subplots(1, 1, sharex=True)
+    ax1.set_ylim(0, 1)
+    # ax2.set_ylim(0, 5)
+    # ax3.set_ylim(0, 5)
+    ax1.set_xlim(0.35, 0.5)
     x = np.linspace(0,1,param.N_grid)
-    # s1 = getVector(path + s_files[frame])
-    # label1 = 'C0 = ' + str(param.c0)
-    # ax2.plot(x,s1,color='orange',label=label1)
-
-    timestep = 7000000
-    file = 's_t=' + str(timestep) + '.dat'
-    s1path = 'output/run_2a1/'
-    (s1,var1,param1) = get_s_from(s1path, 700000, file)
-    label1 = 'a + b -> c'#'s0 = ' + str(param1.s0)
+    timestep = 2000000
+    T = timestep*param.delta_t
+    sfile = 's_t=' + str(timestep) + '.dat'
+    bfile = 'b_t=' + str(timestep) + '.dat'
+    s1path = 'output/run_s12/'
+    (s1,var1,param1) = get_s_from(s1path, 700000, sfile)
+    (b1,var1,param1) = get_s_from(s1path, 700000, bfile)
+    label1 = 's0 = ' + str(param1.s0)
     ax1.plot(x,s1,color='orange',label=label1)
-    s2path = 'output/run_2a2/'
-    (s2,var2,param2) = get_s_from(s2path, 700000, file)
-    label2 = '2a + b -> c'#'s0 = ' + str(param2.s0)
-    ax2.plot(x,s2,'g', label=label2)
-    s3path = 'output/run_2a3/'
-    (s3,var3,param3) = get_s_from(s3path, 700000, file)
-    label3 = '3a + b -> c'#'s0 = ' + str(param3.s0)
-    ax3.plot(x,s3,'b', label=label3)
+    ax1.plot(x,b1,'r',label='b')
+    # s2path = 'output/run_s8/'
+    # (s2,var2,param2) = get_s_from(s2path, 700000, sfile)
+    # (b2,var2,param2) = get_s_from(s2path, 700000, bfile)
+    # label2 = 's0 = ' + str(param2.s0)
+    # ax2.plot(x,s2,'g', label=label2)
+    # ax2.plot(x,b2,'r')
+    # s3path = 'output/run_s9/'
+    # (s3,var3,param3) = get_s_from(s3path, 700000, sfile)
+    # (b3,var3,param3) = get_s_from(s3path, 700000, bfile)
+    # label3 = 's0 = ' + str(param3.s0)
+    # ax3.plot(x,s3,'b', label=label3)
+    # ax3.plot(x,b3,'r', label='b')
 
-    ax2.set_ylabel("Density")
+    # ax2.set_ylabel("Density")
+    ax1.set_ylabel("Density")
 
     addParameters(fig1,ptxt)
     addlabel()
