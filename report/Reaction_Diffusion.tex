@@ -6,24 +6,92 @@
 \usepackage{hyperref}
 \usepackage[]{todonotes}
 
+\usepackage{listings}
+\usepackage{xcolor}
+\lstset { %
+    language=C++,
+    backgroundcolor=\color{black!5}, % set backgroundcolor
+    basicstyle=\footnotesize,% basic font setting
+}
+
 %\usepackage[section]{below}        %Confine figures to their sections
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \begin{document}
 \begin{frontmatter}
-\title{Title}
+\title{Exam in TFY4235}
 \author{Paul Thrane}
-%\address[fysikk]{Institutt for fysikk, Norges Teknisk-Naturvitenskapelige Universitet, N-7491 Trondheim, Norway.}
 \begin{abstract}
-A catchy abstract.
+This documents my work during the home exam in Computational Physics at NTNU. The task \cite{exam} considers a 1D reaction diffusion system, corresponding to the ones examined in \cite{einarsrud} and \cite{samseth}.
+Accompanying this document should be a zip file containing the code I've written, together with the code and documentation for the the 2'nd assignment during the course \cite{percolation}.
+During the exam I have discussed the problems with Kristian Hjorth, Rasmus Tran\aa s and H\aa kon Task\'en.
 
 \end{abstract}
 \end{frontmatter}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\section{Main Body}
-An intriguing introduction, followed by something cool. \nocite{*}
+\section{Solving the Differential Equations}
+I will not introduce the task, as this is explained in \cite{exam}, but for reference i have included the equations of interest;
+\begin{subequations}
+\begin{equation}
+a_t = \partial_x (D_a \partial_xa) - Rab,
+\end{equation}    
+\begin{equation}
+b_t = \partial_x (D_b \partial_xb) - Rab,
+\end{equation}
+\begin{equation}
+c_t = \partial_x (D_c \partial_xc) + Rab - N_1\theta (c-c_0)c^2 - N_2cs,
+\end{equation}
+\begin{equation}
+s_t = + N_1\theta (c-c_0)c^2 + N_2cs.
+\end{equation}
+\label{pde}
+\end{subequations}
 
-\begin{figure}
+A major part of the first day went to examining these equations and understanding what they described. 
+At first glance it seemed like it would be easy to implement an explicit scheme to solve them, but I did not know if this would converge nicely. 
+I found several papers describing different angles of attack, for example \cite{kassam}, which states that a usual approach is low order finite differences but that higher order methods can be much faster. 
+Nonetheless, I figured I would be better off implementing something i had done before. 
+Having Assignment 3\footnote{Assignment 3 concerned low order Euler methods and related schemes.} fresh in mind, I decided I would test using an explicit scheme, as it then would be trivial to include the nonlinear cross terms in between the gasses and the solid.
+ After a brief sidetrack trying to formulate a Lax-Wendroff scheme I further settled on using the lowest order since it would probably save time both in the implementation and for debugging. 
+ Also, \cite{einarsrud} states that the reaction terms are fast, and that they therefore choose an explicit method. 
+ This can be seen by writing the equations in a dimensionless form, where the reaction term will be multiplied by the factor $RL^2/D_g$, which for the relevant values of $R$, $L$ and $D$ is of the order of $10^7$.
+
+I implemented the solution of the equations in C++, mainly because I figured speed might be an issue as well as it being my preferred language besides Python. 
+I hesitated a bit when deciding how to structure the code. In the end, I decided on having everything in one file, since I did not think I would need that much code. 
+Further, I decided to store the data in Armadillo vectors  \cite{armadillo}, and use their vector multiplication instead of using arrays and loops, mainly because I figured it would be more readable. 
+The main loop that updates the solution to the next time step is the following:
+\begin{lstlisting}
+    // a + b -> c, NOTE: % is element wise multiplication in Armadillo
+    reaction_ab = delta_t*R*(a%b);
+    // Nucleation
+    step_func(c, c0, above_critical_c);
+    reaction_cc = delta_t*N1*(above_critical_c % (c%c));
+    // Deposition on existing solids
+    reaction_cs = delta_t*N2*(c%s);
+    // Add reaction terms
+    a = a - reaction_ab;
+    b = b - reaction_ab;
+    c = c + reaction_ab - reaction_cc - reaction_cs;
+    s = s               + reaction_cc + reaction_cs;
+    // Diffusion of gasses
+    a = B_a*a;
+    b = B_b*b;
+    c = B_c*c;
+\end{lstlisting}
+Here, $B_a$, $B_b$ and $B_c$ are tridiagonal matrices giving diffusion of the gasses. Notice that the states are updated from the interaction separately from updating due to diffusion.
+This was tested due to a comment in \cite{einarsrud} where it is stated that they do the same.
+This can be considered reasonable since the reaction terms will be the same either way, while the produced gas $c$ should propagate with the diffusion coefficient $D_c$.
+Also, it was found to be a little more stable to update due to the different effects separately.
+Furthermore, this way of implementation opens up the possibility of using an implicit scheme for the diffusion terms.
+The reason you would usually like to do this is to improve stability and thereby be able to take larger time steps without diverging from the correct solution.
+Upon testing, it became clear that for the given values of the parameters the program diverged for larger time steps due to the diffusion term close to the border where b is large.
+However, with an implicit solution I was still not able to increase the time step.
+This was because the reaction term became unstable for approximately the same time step that the explicit scheme diverged, which can be understood by considering that the reaction term essentially works on a different timescale as stated above.
+Because of this I decided to stick with the explicit solution, as it includes less calculations at the time resolution needed to handle the reaction terms.
+
+The 
+
+\begin{figure}[h]
 	\centering
 	\includegraphics[width=\linewidth]{../figures/standard_settings_time.png}
 	\caption{Coordinates.}
