@@ -119,11 +119,11 @@ def get_s_from(path, time, name):
     timestep = round(time/param.delta_t)
     print('Want to use closest to s_t=' + str(timestep) + '.dat')
     print('Actually using ' + name)
-    return (getVector(path + name), param.c0,param)
+    return (getVector(path + name), param.Da0,param)
 
 if __name__ == "__main__":
     # Source
-    path='output/run_dc3/'
+    path='output/run_s6/'
     # Get filenames
     filenames = os.listdir(path)
     # Sort to get correct time ordering
@@ -163,35 +163,39 @@ if __name__ == "__main__":
     # plotMovie(a_files, b_files, c_files, s_files, 'standard_params.mp4',legend=legend)
 
     # Plot of concentrations
-    # fig1, (ax1, ax2, ax3) = plt.subplots(3, 1, sharex=True)
-    #
+    fig1, (ax1, ax2, ax3) = plt.subplots(3, 1, sharex=True)
+
     frame = len(s_files)-1
-    # T = frame*param.f_rate*param.delta_t
-    #
-    # x = np.linspace(0,1,param.N_grid)
-    s1 = getVector(path + s_files[frame])
+    T = frame*param.f_rate*param.delta_t
+
+    x = np.linspace(0,1,param.N_grid)
+    # s1 = getVector(path + s_files[frame])
     # label1 = 'C0 = ' + str(param.c0)
     # ax2.plot(x,s1,color='orange',label=label1)
-    #
-    # s2file = 's_t=7000000.dat'
-    # s2path = 'output/run_dc4/'
-    # (s2,var2,param2) = get_s_from(s2path, 700000, s2file)
-    # label2 = 'C0 = ' + str(var2)
-    # ax3.plot(x,s2,'g', label=label2)
-    # s3file = 's_t=7000000.dat'
-    # s3path = 'output/run_dc3/'
-    # (s3,var3,param3) = get_s_from(s3path, 700000, s3file)
-    # label3 = 'C0 = ' + str(var3)
-    # ax1.plot(x,s3,'b', label=label3)
-    #
-    # ax2.set_ylabel("Density")
-    #
-    # addParameters(fig1,ptxt)
-    # addlabel()
-    # fig1.legend(loc=1)
-    # plt.suptitle('T = ' + str(T) +' s')
-    #
-    # # Looking at peaks
+
+    timestep = 7000000
+    file = 's_t=' + str(timestep) + '.dat'
+    s1path = 'output/run_2a1/'
+    (s1,var1,param1) = get_s_from(s1path, 700000, file)
+    label1 = 'a + b -> c'#'s0 = ' + str(param1.s0)
+    ax1.plot(x,s1,color='orange',label=label1)
+    s2path = 'output/run_2a2/'
+    (s2,var2,param2) = get_s_from(s2path, 700000, file)
+    label2 = '2a + b -> c'#'s0 = ' + str(param2.s0)
+    ax2.plot(x,s2,'g', label=label2)
+    s3path = 'output/run_2a3/'
+    (s3,var3,param3) = get_s_from(s3path, 700000, file)
+    label3 = '3a + b -> c'#'s0 = ' + str(param3.s0)
+    ax3.plot(x,s3,'b', label=label3)
+
+    ax2.set_ylabel("Density")
+
+    addParameters(fig1,ptxt)
+    addlabel()
+    fig1.legend(loc=1)
+    plt.suptitle('T = ' + str(T) +' s')
+
+    # # # Looking at peaks
     # fig3=plt.figure(3)
     # axis3 = fig3.subplots(1,1)
     # s = [s3,s1,s2]
@@ -235,58 +239,30 @@ if __name__ == "__main__":
     # addParameters(fig4,ptxt)
     # plt.suptitle('T = ' + str(T) +' s')
 
-    # How peaks grow with time
-    # Finding peaks
-    peaks = find_peaks(s1, distance=5)
-    peaks = peaks[0]
-    # How peaks grow, with rows as times, and columns as peaks
-    peakGrowth=np.zeros((len(s_files),len(peaks)))
-    fig10 = plt.figure(10)
-    axis10 = fig10.subplots(1,1)
-    for i in range(0,len(s_files)):
-        s = getVector(path + s_files[i])
-        for j in range(0,len(peaks)):
-            peakGrowth[i,j] = s[peaks[j]]
-    times = range(0,len(s_files))
-    times = [times[l]*param.f_rate*param.delta_t for l in range(0,len(times))]
-    for p in range(0,15):
-        axis10.plot(times, peakGrowth[:,p])
-    axis10.set_xlabel(r'Time [s]')
-    axis10.set_ylabel(r'Density of sheet')
-    addParameters(fig10,ptxt)
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    # peaknums = range(1,len(peaks))
-    # peak_x = [x[j] for j in peaks]
-    # peak_s = [s[j] for j in peaks]
-    # fig2=plt.figure(2)
-    # plt.plot(x,s)
-    # plt.plot(peak_x,peak_s,'rx')
-    # # Space between peaks
-    # fig3=plt.figure(3)
-    # delta_peak_x = np.diff(peak_x)
-    # plt.plot(peaknums, list(reversed(delta_peak_x)))
-    # # Time between nucleation
-    # fig4 = plt.figure(4)
-    # peak_t = getVector(path + t_nucleation_file)
-    # peak_t = [peak_t[j] for j in peaks]
-    # delta_peak_t = -np.diff(peak_t)
-    # plt.plot(peaknums, list(reversed(delta_peak_t*param.delta_t)))
+    # # How peaks grow with time
+    # # Finding peaks
+    # frame = len(s_files)-1
+    # s1 = getVector(path + s_files[frame])
+    # peaks = find_peaks(s1, distance=5)
+    # peaks = peaks[0]
+    # # How peaks grow, with rows as times, and columns as peaks
+    # peakGrowth=np.zeros((len(s_files),len(peaks)))
+    # fig10 = plt.figure(10)
+    # axis10 = fig10.subplots(1,1)
+    # for i in range(0,len(s_files)):
+    #     s = getVector(path + s_files[i])
+    #     for j in range(0,len(peaks)):
+    #         peakGrowth[i,j] = s[peaks[j]]
+    # times = range(0,len(s_files))
+    # times = [times[l]*param.f_rate*param.delta_t for l in range(0,len(times))]
+    # for p in range(0,15):
+    #     axis10.plot(times, peakGrowth[:,p])
+    # axis10.set_xlabel(r'Time [s]')
+    # axis10.set_ylabel(r'Density of sheet')
+    # addParameters(fig10,ptxt)
+    #
 
 
 
